@@ -1,60 +1,56 @@
 //
-//  ViewController.swift
+//  DocumentViewController.swift
 //  DScan
 //
-//  Created by Vandilson Lima on 09/07/20.
+//  Created by Vandilson Lima on 14/07/20.
 //  Copyright © 2020 vandilson. All rights reserved.
 //
 
 import UIKit
-import VisionKit
 
-class HomeViewController: UIViewController {
+class DocumentViewController: UIViewController {
     @IBOutlet weak var collectionView: UICollectionView!
 
-    let collection = DocumentCollection()
-
-    var documents: [Document] {
-        return collection.documents
-    }
+    var document: Document!
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        self.title = document.name
         collectionView.dataSource = self
         collectionView.delegate = self
     }
 
-    @IBAction func addButtonTapped(_ sender: Any) {
-        let scannerViewController = VNDocumentCameraViewController()
-        scannerViewController.delegate = self
-        present(scannerViewController, animated: true)
-    }
-
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         let indexPath = collectionView.indexPath(for: sender as! UICollectionViewCell)!
-        let vc = segue.destination as! DocumentViewController
-        vc.document = documents[indexPath.row]
+        let vc = segue.destination as! ImageFullViewController
+        vc.image = document.images[indexPath.row]
+    }
+
+    @IBAction func didTapShareButton(_ sender: Any) {
+        let items = document.images.map { $0.image }
+        let activity = UIActivityViewController(activityItems: items, applicationActivities: nil)
+        self.present(activity, animated: true)
     }
 }
 
-extension HomeViewController: UICollectionViewDataSource {
+extension DocumentViewController: UICollectionViewDataSource {
 
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return documents.count
+        return document.images.count
     }
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "cell", for: indexPath) as! DocumentCollectionViewCell
-        let document = documents[indexPath.row]
+        let image = document.images[indexPath.row]
 
-        cell.imageView.image = document.images.first?.image
-        cell.textLabel.text = document.name
+        cell.imageView.image = image.image
+        cell.textLabel.text = ""
 
         return cell
     }
 }
 
-extension HomeViewController: UICollectionViewDelegateFlowLayout {
+extension DocumentViewController: UICollectionViewDelegateFlowLayout {
 
     var margin: CGFloat { 5 }
 
@@ -93,31 +89,3 @@ extension HomeViewController: UICollectionViewDelegateFlowLayout {
         performSegue(withIdentifier: "document", sender: collectionView.cellForItem(at: indexPath))
     }
 }
-
-extension HomeViewController: VNDocumentCameraViewControllerDelegate {
-
-    func documentCameraViewControllerDidCancel(_ controller: VNDocumentCameraViewController) {
-        controller.dismiss(animated: true)
-    }
-
-    func documentCameraViewController(_ controller: VNDocumentCameraViewController, didFailWithError error: Error) {
-        controller.dismiss(animated: true)
-    }
-
-    func documentCameraViewController(_ controller: VNDocumentCameraViewController, didFinishWith scan: VNDocumentCameraScan) {
-        controller.dismiss(animated: true)
-        collectionView.reloadData()
-
-        var images = [DocumentImage]()
-        for i in 0..<scan.pageCount {
-            let img = scan.imageOfPage(at: i)
-            images.append(DocumentImage(image: img))
-        }
-
-        let name = UUID().uuidString
-        let doc = Document(name: name, images: images)
-        collection.add(doc)
-        collectionView.reloadData()
-    }
-}
-

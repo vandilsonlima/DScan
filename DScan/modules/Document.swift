@@ -8,7 +8,6 @@
 
 import UIKit
 
-
 class DocumentImage {
     let image: UIImage
     var url: URL?
